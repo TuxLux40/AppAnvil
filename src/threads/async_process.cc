@@ -56,5 +56,6 @@ std::list<std::string> AsyncProcess::readlines()
 
 bool AsyncProcess::valid()
 {
-  return pid > 0 && stdin_fd > 0;
+  return pid > 0 && stdin_fd > 0 && stderr_fd > 0 && (getpgid(pid) >= 0) && (fcntl(stdin_fd, F_GETFD) != -1) &&
+         (fcntl(stderr_fd, F_GETFD) != -1);
 }

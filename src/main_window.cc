@@ -48,7 +48,7 @@ MainWindow::MainWindow()
   m_search_button.signal_toggled().connect(search_togggle_fun, true);
 
   // Connect the reauthenticate button
-  auto enable_auth_fun = sigc::mem_fun(*console, &ConsoleThread::send_refresh_message);
+  auto enable_auth_fun = sigc::mem_fun(*console, &ConsoleThread::start_aa_caller);
   prof_control->get_tab()->connect_reauthenticate_button(enable_auth_fun);
   proc_control->get_tab()->connect_reauthenticate_button(enable_auth_fun);
   logs_control->get_tab()->connect_reauthenticate_button(enable_auth_fun);

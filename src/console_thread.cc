@@ -9,10 +9,24 @@
 #include <string>
 
 ConsoleThread::ConsoleThread(dispatch_cb_fun prof, dispatch_cb_fun proc, log_cb_fun logs, std::function<void(bool)> show_reauth)
-  : aa_caller_proc{ CommandCaller::call_aa_caller() },
-    dispatch_man(prof, proc, logs, show_reauth),
-    asynchronous_thread(std::async(std::launch::async, &ConsoleThread::console_caller, this))
+  : dispatch_man(prof, proc, logs, show_reauth)
 {
+  this->start_aa_caller();
+  this->asynchronous_thread = std::async(std::launch::async, &ConsoleThread::console_caller, this);
+}
+
+void ConsoleThread::start_aa_caller()
+{
+  if (aa_caller_proc != nullptr && aa_caller_proc->valid()) {
+    return;
+  }
+
+  std::unique_lock<std::mutex> lock(task_ready_mtx);
+  aa_caller_proc = CommandCaller::call_aa_caller();
+  dispatch_man.update_reauth(false);
+
+  lock.unlock();
+  this->send_refresh_message();
 }
 
 void ConsoleThread::send_refresh_message()
@@ -65,13 +79,13 @@ typename ConsoleThread::Message ConsoleThread::wait_for_message()
 
 void ConsoleThread::handle_refresh()
 {
-  dispatch_man.update_reauth(!aa_caller_proc.valid());
-  if (!aa_caller_proc.valid()) {
+  if (aa_caller_proc == nullptr || !aa_caller_proc->valid()) {
+    dispatch_man.update_reauth(true);
     return;
   }
 
   Json::Reader reader;
-  for (const std::string &line : aa_caller_proc.readlines()) {
+  for (const std::string &line : aa_caller_proc->readlines()) {
     Json::Value root;
     reader.parse(line, root);
     for (const std::string &key : root.getMemberNames()) {

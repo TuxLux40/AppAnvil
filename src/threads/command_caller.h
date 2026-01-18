@@ -31,7 +31,7 @@ public:
   CommandCaller &operator=(const CommandCaller &) = default;
   CommandCaller &operator=(CommandCaller &&)      = delete;
 
-  static AsyncProcess call_aa_caller() noexcept;
+  static std::unique_ptr<AsyncProcess> call_aa_caller() noexcept;
 
   /**
    * @brief Returns true if AppArmor is enabled on the system
@@ -85,10 +85,10 @@ protected:
   // Used to call command-line commands from `/usr/sbin`
   virtual results call_command(const std::vector<std::string> &command);
   virtual std::string call_command(const std::vector<std::string> &command, const std::string &return_on_error);
-  virtual AsyncProcess call_command_async(const std::vector<std::string> &command);
+  virtual std::unique_ptr<AsyncProcess> call_command_async(const std::vector<std::string> &command);
 
   // Dependency Injection: For unit testing
-  static AsyncProcess call_aa_caller(CommandCaller *caller) noexcept;
+  static std::unique_ptr<AsyncProcess> call_aa_caller(CommandCaller *caller) noexcept;
   static std::string load_profile(CommandCaller *caller, const std::string &fullFileName);
   static std::string disable_profile(CommandCaller *caller, const std::string &profileName);
   static std::string execute_change(CommandCaller *caller,

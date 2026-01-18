@@ -10,6 +10,7 @@
 #include <functional>
 #include <future>
 #include <glibmm/dispatcher.h>
+#include <memory>
 #include <mutex>
 #include <vector>
 
@@ -30,6 +31,9 @@ public:
 
   // Create a move assignment operator
   ConsoleThread &operator=(ConsoleThread &&other) noexcept;
+
+  // Helper function to init `aa_caller_proc`
+  void start_aa_caller();
 
   void send_refresh_message();
   void send_change_profile_status_message(const std::string &profile, const std::string &old_status, const std::string &new_status);
@@ -67,7 +71,7 @@ private:
   // Member fields
   BlockingQueue<Message> queue;
 
-  AsyncProcess aa_caller_proc;
+  std::unique_ptr<AsyncProcess> aa_caller_proc;
 
   // DispatcherMiddleman used to communicate results with main thread
   DispatcherMiddleman<> dispatch_man;

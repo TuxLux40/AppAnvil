@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <glibmm/spawn.h>
 #include <iostream>
+#include <memory>
 #include <stdexcept>
 #include <sys/stat.h>
 
@@ -37,7 +38,7 @@ std::string CommandCaller::call_command(const std::vector<std::string> &command,
   return result.output;
 }
 
-AsyncProcess CommandCaller::call_command_async(const std::vector<std::string> &command)
+std::unique_ptr<AsyncProcess> CommandCaller::call_command_async(const std::vector<std::string> &command)
 {
   Glib::Pid child_pid;
   Glib::Pid stdout_fd;
@@ -47,7 +48,7 @@ AsyncProcess CommandCaller::call_command_async(const std::vector<std::string> &c
   Glib::spawn_async_with_pipes(
     "/usr/sbin/", command, envp, Glib::SpawnFlags::SPAWN_SEARCH_PATH_FROM_ENVP, {}, &child_pid, nullptr, &stdout_fd, &stderr_fd);
 
-  return AsyncProcess(child_pid, stdout_fd, stderr_fd);
+  return std::make_unique<AsyncProcess>(child_pid, stdout_fd, stderr_fd);
 }
 
 inline bool contains(const std::string &big_str, const std::string &small_str)
@@ -55,7 +56,7 @@ inline bool contains(const std::string &big_str, const std::string &small_str)
   return big_str.find(small_str) != std::string::npos;
 }
 
-AsyncProcess CommandCaller::call_aa_caller(CommandCaller *caller) noexcept
+std::unique_ptr<AsyncProcess> CommandCaller::call_aa_caller(CommandCaller *caller) noexcept
 {
   std::vector<std::string> command = { "pkexec", "aa-caller" };
   return caller->call_command_async(command);
@@ -150,7 +151,7 @@ bool CommandCaller::get_enabled(CommandCaller *caller) noexcept
 }
 
 // Static public methods
-AsyncProcess CommandCaller::call_aa_caller() noexcept
+std::unique_ptr<AsyncProcess> CommandCaller::call_aa_caller() noexcept
 {
   CommandCaller caller;
   return call_aa_caller(&caller);
