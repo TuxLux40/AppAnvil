@@ -5,6 +5,7 @@
 #include "log_record.h"
 
 #include <glibmm/dispatcher.h>
+#include <json/value.h>
 #include <memory>
 
 // If the unit tests are enabled, include the following header
@@ -12,28 +13,33 @@
 #include <gtest/gtest.h>
 #endif
 
+typedef std::function<void(std::string &)> dispatch_cb_fun;
+typedef std::function<void(std::list<std::shared_ptr<LogRecord>> &)> log_cb_fun;
+
 /**
  * Class to extend some of the functionality of `Dispatcher` to easier facilitate inter-thread
  * communication between the second thread and main thread. This is needed to prevent some
  * concurrency errors with the GUI.
  **/
-template<class Profiles, class Processes, class Logs, class Dispatcher, class Mutex>
+template<class Dispatcher = Glib::Dispatcher, class Mutex = std::mutex>
 class DispatcherMiddleman
 {
 public:
   // Constructor
-  DispatcherMiddleman(std::shared_ptr<Profiles> prof, std::shared_ptr<Processes> proc, std::shared_ptr<Logs> logs);
+  DispatcherMiddleman(dispatch_cb_fun prof, dispatch_cb_fun proc, log_cb_fun logs, std::function<void(bool)> show_reauth);
+
   // For unit testing
   explicit DispatcherMiddleman(std::shared_ptr<Dispatcher> disp,
-                               std::shared_ptr<Profiles> prof,
-                               std::shared_ptr<Processes> proc,
-                               std::shared_ptr<Logs> logs,
+                               dispatch_cb_fun prof,
+                               dispatch_cb_fun proc,
+                               log_cb_fun logs,
                                std::shared_ptr<Mutex> my_mtx);
 
   // Send methods (called from second thread)
-  void update_profiles(const std::string &confined, const bool &had_authentication_error);
-  void update_processes(const std::string &unconfined, const bool &had_authentication_error);
-  void update_logs(const std::list<std::shared_ptr<LogRecord>> &logs, const bool &had_authentication_error);
+  void update_profiles(Json::Value &value);
+  void update_processes(Json::Value &value);
+  void update_logs(const std::list<std::shared_ptr<LogRecord>> &logs);
+  void update_reauth(const bool &reauth);
   void update_prof_apply_text(const std::string &text);
 
 protected:
@@ -43,28 +49,32 @@ protected:
     PROFILE,
     PROCESS,
     LOGS,
-    PROFILES_TEXT
+    PROFILES_TEXT,
+    REAUTH
   };
 
   struct CallData
   {
     CallType type;
-
-    std::string string;
+    std::string data;
     std::list<std::shared_ptr<LogRecord>> logs;
-    bool had_authentication_error;
+    bool should_reauth;
 
-    CallData(CallType a, const std::string &b, const bool &c)
-      : type{ a },
-        string{ b },
-        had_authentication_error{ c }
+    CallData(CallType type, Json::Value data)
+      : type{ type },
+        data{ data.asString() }
     {
     }
 
-    CallData(CallType a, const std::list<std::shared_ptr<LogRecord>> &b, const bool &c)
-      : type{ a },
-        logs{ b },
-        had_authentication_error{ c }
+    CallData(std::list<std::shared_ptr<LogRecord>> logs)
+      : type{ LOGS },
+        logs{ logs }
+    {
+    }
+
+    CallData(bool should_reauth)
+      : type{ REAUTH },
+        should_reauth{ should_reauth }
     {
     }
   };
@@ -73,12 +83,13 @@ protected:
   void handle_signal();
 
 private:
-  BlockingQueue<CallData, std::deque<CallData>, Mutex> queue;
+  BlockingQueue<CallData, Mutex> queue;
   std::shared_ptr<Dispatcher> dispatch;
 
-  std::shared_ptr<Profiles> prof;
-  std::shared_ptr<Processes> proc;
-  std::shared_ptr<Logs> logs;
+  dispatch_cb_fun prof;
+  dispatch_cb_fun proc;
+  log_cb_fun logs;
+  std::function<void(bool)> show_reauth;
 
 #ifdef TESTS_ENABLED
   FRIEND_TEST(DispatcherMiddlemanTest, UPDATE_PROFILES);

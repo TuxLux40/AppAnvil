@@ -1,12 +1,9 @@
 #include "log_adapter_test.h"
-#include "../model/status_column_record_mock.h"
-#include "tree_row_mock.h"
 
 #include <gmock/gmock-matchers.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <gtkmm/treestore.h>
-#include <regex>
 #include <string>
 
 void LogAdapterTest::try_put_data(std::vector<LogAdapterTest::TestData> data_set)

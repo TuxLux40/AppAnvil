@@ -8,8 +8,9 @@
 #include <glibmm/priorities.h>
 #include <list>
 #include <memory>
+#include <regex>
 #include <sigc++/functors/mem_fun.h>
-#include <sstream>
+#include <string>
 
 template<class LogsTab, class Database, class Adapter, class LogRecord>
 bool LogsController<LogsTab, Database, Adapter, LogRecord>::on_button_event(GdkEventButton *event)

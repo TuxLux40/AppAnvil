@@ -1,10 +1,5 @@
 #include "dispatcher_middleman.h"
-#include "../tabs/controller/logs_controller_mock.h"
-#include "../tabs/controller/processes_controller_mock.h"
-#include "../tabs/controller/profiles_controller_mock.h"
-#include "mutex_mock.h"
 
-#include <future>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -40,9 +35,9 @@ TEST_F(DispatcherMiddlemanTest, UPDATE_PROFILES)
 
   int num_calls = 1;
   expect_locks(2 * num_calls);
-  expect_show_reauthenticate_prompt(should_show, num_calls);
+  expect_show_reauthenticate_prompt(should_show, 0);
 
-  dispatch_man.update_profiles(profiles_arg, should_show);
+  dispatch_man.update_profiles(profiles_arg_json);
   dispatch_man.handle_signal();
 }
 
@@ -56,10 +51,9 @@ TEST_F(DispatcherMiddlemanTest, UPDATE_PROCESSES)
 
   int num_calls = 1;
   expect_locks(2 * num_calls);
-  expect_show_reauthenticate_prompt(should_show, num_calls);
+  expect_show_reauthenticate_prompt(should_show, 0);
 
-  dispatch_man.update_processes(processes_arg, should_show);
-  ;
+  dispatch_man.update_processes(processes_arg_json);
   dispatch_man.handle_signal();
 }
 
@@ -73,10 +67,9 @@ TEST_F(DispatcherMiddlemanTest, UPDATE_LOGS)
 
   int num_calls = 1;
   expect_locks(2 * num_calls);
-  expect_show_reauthenticate_prompt(should_show, num_calls);
+  expect_show_reauthenticate_prompt(should_show, 0);
 
-  dispatch_man.update_logs(logs_arg, should_show);
-  ;
+  dispatch_man.update_logs(logs_arg);
   dispatch_man.handle_signal();
 }
 
@@ -91,13 +84,11 @@ TEST_F(DispatcherMiddlemanTest, UPDATE_PROFILES_PROCESSES_SEQUENTIAL)
 
   int num_calls = 2;
   expect_locks(2 * num_calls);
-  expect_show_reauthenticate_prompt(should_show, num_calls);
+  expect_show_reauthenticate_prompt(should_show, 0);
 
-  dispatch_man.update_profiles(profiles_arg, should_show);
-  ;
+  dispatch_man.update_profiles(profiles_arg_json);
   dispatch_man.handle_signal();
-  dispatch_man.update_processes(processes_arg, should_show);
-  ;
+  dispatch_man.update_processes(processes_arg_json);
   dispatch_man.handle_signal();
 }
 
@@ -112,12 +103,10 @@ TEST_F(DispatcherMiddlemanTest, UPDATE_PROFILES_PROCESSES_INTERLOCKING)
 
   int num_calls = 2;
   expect_locks(2 * num_calls);
-  expect_show_reauthenticate_prompt(should_show, num_calls);
+  expect_show_reauthenticate_prompt(should_show, 0);
 
-  dispatch_man.update_profiles(profiles_arg, should_show);
-  ;
-  dispatch_man.update_processes(processes_arg, should_show);
-  ;
+  dispatch_man.update_profiles(profiles_arg_json);
+  dispatch_man.update_processes(processes_arg_json);
   dispatch_man.handle_signal();
   dispatch_man.handle_signal();
 }

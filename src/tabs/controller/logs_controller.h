@@ -1,14 +1,10 @@
 #ifndef TABS_CONTROLLER_LOGS_CONTROLLER_H
 #define TABS_CONTROLLER_LOGS_CONTROLLER_H
 
-#include "../model/status_column_record.h"
 #include "status_controller.h"
 
 #include <memory>
-#include <regex>
-#include <sstream>
 #include <string>
-#include <vector>
 
 #ifdef TESTS_ENABLED
 #include <gtest/gtest.h>

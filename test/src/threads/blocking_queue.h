@@ -29,11 +29,11 @@ protected:
   std::shared_ptr<DequeMock<int>> my_internal_queue;
   std::shared_ptr<MutexMock> mtx_mock;
 
-  BlockingQueue<int, DequeMock<int>, MutexMock> b_queue;
+  BlockingQueue<int, MutexMock, DequeMock<int>> b_queue;
 };
 
 // Used to avoid linker errors
 // For more information, see: https://isocpp.org/wiki/faq/templates#class-templates
-template class BlockingQueue<int, DequeMock<int>, MutexMock>;
+template class BlockingQueue<int, MutexMock, DequeMock<int>>;
 
 #endif

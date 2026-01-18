@@ -1,18 +1,25 @@
 #include "main_window.h"
-#include "console_thread.h"
 
 #include <gtkmm/button.h>
 #include <gtkmm/enums.h>
 #include <gtkmm/togglebutton.h>
 #include <tuple>
 
+using std::placeholders::_1;
+
 MainWindow::MainWindow()
   : database{ std::make_shared<Database>() },
     prof_control{ std::make_shared<ProfilesControllerInstance>(database) },
     proc_control{ std::make_shared<ProcessesControllerInstance>(database) },
-    logs_control{ std::make_shared<LogsControllerInstance>(database) },
-    console{ std::make_shared<ConsoleThreadInstance>(prof_control, proc_control, logs_control) }
+    logs_control{ std::make_shared<LogsControllerInstance>(database) }
 {
+  // Initialize the ConsoleThread Object
+  auto pf_cb = std::bind(&ProfilesControllerInstance::add_data_to_record, prof_control, _1);
+  auto pc_cb = std::bind(&ProcessesControllerInstance::add_data_to_record, proc_control, _1);
+  auto lo_cb = std::bind(&LogsControllerInstance::add_data_to_record, logs_control, _1);
+  auto mw_cb = std::bind(&MainWindow::show_reauth, this, _1);
+  console    = std::make_shared<ConsoleThread>(pf_cb, pc_cb, lo_cb, mw_cb);
+
   // Add tabs to the stack pane
   m_tab_stack.add(*(prof_control->get_tab()), "prof", "Profiles");
   m_tab_stack.add(*(proc_control->get_tab()), "proc", "Processes");
@@ -31,7 +38,7 @@ MainWindow::MainWindow()
   on_switch(NULL);
 
   // Connect the profile tab to the `send_status_change` method
-  auto change_fun = sigc::mem_fun(*console, &ConsoleThreadInstance::send_change_profile_status_message);
+  auto change_fun = sigc::mem_fun(*console, &ConsoleThread::send_change_profile_status_message);
   prof_control->set_status_change_signal_handler(change_fun);
 
   // Configure settings related to 'Search' button
@@ -41,7 +48,7 @@ MainWindow::MainWindow()
   m_search_button.signal_toggled().connect(search_togggle_fun, true);
 
   // Connect the reauthenticate button
-  auto enable_auth_fun = sigc::mem_fun(*console, &ConsoleThreadInstance::reenable_authentication_for_refresh);
+  auto enable_auth_fun = sigc::mem_fun(*console, &ConsoleThread::start_aa_caller);
   prof_control->get_tab()->connect_reauthenticate_button(enable_auth_fun);
   proc_control->get_tab()->connect_reauthenticate_button(enable_auth_fun);
   logs_control->get_tab()->connect_reauthenticate_button(enable_auth_fun);
@@ -95,18 +102,13 @@ void MainWindow::on_search_toggle()
 bool MainWindow::on_switch(GdkEvent *event)
 {
   std::ignore = event;
-
-  const std::string visible_child = m_tab_stack.get_visible_child_name();
-  if (visible_child == "prof") {
-    console->send_refresh_message(PROFILE);
-    help_toggle.set_help_type(Help::Type::PROFILE);
-  } else if (visible_child == "proc") {
-    console->send_refresh_message(PROCESS);
-    help_toggle.set_help_type(Help::Type::PROCESS);
-  } else if (visible_child == "logs") {
-    console->send_refresh_message(LOGS);
-    help_toggle.set_help_type(Help::Type::LOGS);
-  }
-
+  console->send_refresh_message();
   return false;
+}
+
+void MainWindow::show_reauth(bool should_show_reauth)
+{
+  prof_control->get_tab()->show_reauthenticate_prompt(should_show_reauth);
+  proc_control->get_tab()->show_reauthenticate_prompt(should_show_reauth);
+  logs_control->get_tab()->show_reauthenticate_prompt(should_show_reauth);
 }

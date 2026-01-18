@@ -1,13 +1,12 @@
 #ifndef TEST_SRC_TABS_MODEL_LOG_ADAPTER_TEST_H
 #define TEST_SRC_TABS_MODEL_LOG_ADAPTER_TEST_H
 
-#include "../../../../src/tabs/entries.h"
 #include "../../../../src/tabs/model/log_adapter.cc"
-#include "status_column_record_mock.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <memory>
+#include <regex>
 
 // Test Fixture for Logs class
 class LogAdapterTest : public ::testing::Test

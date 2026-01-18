@@ -10,6 +10,9 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <json/config.h>
+
+using std::placeholders::_1;
 
 class GlibDispatcherMock
 {
@@ -27,7 +30,11 @@ protected:
       proc{ std::make_shared<ProcessesControllerMock>() },
       logs{ std::make_shared<LogsControllerMock>() },
       mtx_mock{ std::make_shared<MutexMock>() },
-      dispatch_man(disp, prof, proc, logs, mtx_mock)
+      dispatch_man(disp,
+                   std::bind(&ProfilesControllerMock::add_data_to_record, prof, _1),
+                   std::bind(&ProcessesControllerMock::add_data_to_record, proc, _1),
+                   std::bind(&LogsControllerMock::add_data_to_record, logs, _1),
+                   mtx_mock)
   {
   }
 
@@ -40,24 +47,21 @@ protected:
   std::string processes_arg = "string argument for 'processes.add_data()'";
   std::list<std::shared_ptr<LogRecord>> logs_arg;
 
+  Json::Value profiles_arg_json  = Json::String(profiles_arg);
+  Json::Value processes_arg_json = Json::String(processes_arg);
+
   std::shared_ptr<GlibDispatcherMock> disp;
   std::shared_ptr<ProfilesControllerMock> prof;
   std::shared_ptr<ProcessesControllerMock> proc;
   std::shared_ptr<LogsControllerMock> logs;
   std::shared_ptr<MutexMock> mtx_mock;
 
-  DispatcherMiddleman<ProfilesControllerMock, ProcessesControllerMock, LogsControllerMock, GlibDispatcherMock, MutexMock> dispatch_man;
+  DispatcherMiddleman<GlibDispatcherMock, MutexMock> dispatch_man;
 };
 
 // Used to avoid linker errors
 // For more information, see: https://isocpp.org/wiki/faq/templates#class-templates
-template class DispatcherMiddleman<ProfilesControllerMock, ProcessesControllerMock, LogsControllerMock, GlibDispatcherMock, MutexMock>;
-template class BlockingQueue<
-  DispatcherMiddleman<ProfilesControllerMock, ProcessesControllerMock, LogsControllerMock, GlibDispatcherMock, MutexMock>::CallData,
-  std::deque<
-    DispatcherMiddleman<ProfilesControllerMock, ProcessesControllerMock, LogsControllerMock, GlibDispatcherMock, MutexMock>::CallData,
-    std::allocator<
-      DispatcherMiddleman<ProfilesControllerMock, ProcessesControllerMock, LogsControllerMock, GlibDispatcherMock, MutexMock>::CallData>>,
-  MutexMock>;
+typedef DispatcherMiddleman<GlibDispatcherMock, MutexMock> DMType;
+template class DispatcherMiddleman<GlibDispatcherMock, MutexMock>;
 
 #endif

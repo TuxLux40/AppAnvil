@@ -1,7 +1,9 @@
 #include "log_reader.h"
-#include "command_caller.h"
 #include "log_record.h"
 
+#include <iostream>
+#include <json/json.h>
+#include <memory>
 #include <sstream>
 
 LogReader::LogReader(const std::initializer_list<std::string> &log_sources)
@@ -11,7 +13,7 @@ LogReader::LogReader(const std::initializer_list<std::string> &log_sources)
   }
 }
 
-std::pair<std::list<std::shared_ptr<LogRecord>>, bool> LogReader::read_logs()
+std::list<std::shared_ptr<LogRecord>> LogReader::read_logs()
 {
   std::list<std::shared_ptr<LogRecord>> logs;
 
@@ -26,32 +28,45 @@ std::pair<std::list<std::shared_ptr<LogRecord>>, bool> LogReader::read_logs()
     }
   }
 
-  bool audit_success = append_audit_logs(logs);
-  return { logs, audit_success };
+  return logs;
 }
 
-bool LogReader::append_audit_logs(std::list<std::shared_ptr<LogRecord>> &log_list)
+Json::Value parse_JSON(const std::string &raw_json)
 {
-  auto results       = CommandCaller::get_logs(checkpoint_filepath);
-  std::string output = results.first;
-  bool read_success  = results.second;
+  std::stringstream stream;
+  stream << raw_json;
 
-  if (read_success) {
-    std::istringstream stream(output);
+  Json::Value root;
+  Json::CharReaderBuilder builder;
+  JSONCPP_STRING errs;
 
-    if (checkpoint_filepath.empty()) {
-      std::getline(stream, checkpoint_filepath);
+  if (!parseFromStream(builder, stream, &root, &errs)) {
+    std::cerr << errs << std::endl << "journalctl log not in valid JSON format: " << raw_json << std::endl;
+  }
+
+  return root;
+}
+
+std::list<std::shared_ptr<LogRecord>> LogReader::parse_journalctl_logs(const std::string &log_data)
+{
+  std::list<std::shared_ptr<LogRecord>> logs;
+  std::stringstream log_stream(log_data);
+
+  std::string log_line;
+  while (std::getline(log_stream, log_line)) {
+    Json::Value log_json = parse_JSON(log_line);
+    if (log_json.empty()) {
+      continue;
     }
 
-    std::string line;
-    while (std::getline(stream, line)) {
-      auto log = std::make_shared<LogRecord>(line);
+    time_t timestamp = std::stol(log_json["__REALTIME_TIMESTAMP"].asString()) / (1000000);
+    std::string msg  = log_json["MESSAGE"].asString();
 
-      if (log->valid()) {
-        log_list.push_back(log);
-      }
+    auto log = std::make_shared<LogRecord>(timestamp, msg);
+    if (log->valid()) {
+      logs.push_back(log);
     }
   }
 
-  return read_success || !log_list.empty();
+  return logs;
 }

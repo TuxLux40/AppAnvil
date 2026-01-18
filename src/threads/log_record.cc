@@ -1,11 +1,24 @@
 #include "log_record.h"
 #include <aalogparse/aalogparse.h>
+#include <iomanip>
 
 LogRecord::LogRecord(const std::string &log)
 {
   // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
   char *log_char = const_cast<char *>(log.c_str());
   record_data    = parse_record(log_char);
+}
+
+LogRecord::LogRecord(const time_t &timestamp, const std::string &log, const std::locale &loc)
+{
+  std::stringstream stream;
+
+  std::tm bt{};
+  auto *tm = localtime_r(&timestamp, &bt);
+  stream.imbue(loc);
+  stream << std::put_time(tm, "%b %d %H:%M:%S") << " unknown kernel: " << log;
+
+  record_data = parse_record(stream.str().c_str());
 }
 
 LogRecord::~LogRecord()

@@ -8,9 +8,8 @@ set(PROJECT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 ### Sources that need to be built ###
 set(
   SOURCES
-  ${PROJECT_SOURCE_DIR}/main_window.cc
-  ${PROJECT_SOURCE_DIR}/console_thread.cc
   ${PROJECT_SOURCE_DIR}/threads/blocking_queue.cc
+  ${PROJECT_SOURCE_DIR}/threads/async_process.cc
   ${PROJECT_SOURCE_DIR}/threads/command_caller.cc
   ${PROJECT_SOURCE_DIR}/threads/dispatcher_middleman.cc
   ${PROJECT_SOURCE_DIR}/threads/log_record.cc
@@ -39,6 +38,8 @@ set(
   ${PROJECT_SOURCE_DIR}/tabs/view/scrolled_view.cc
   ${PROJECT_SOURCE_DIR}/tabs/view/add_abstraction.cc
   ${PROJECT_SOURCE_DIR}/tabs/view/add_file_rule.cc
+  ${PROJECT_SOURCE_DIR}/console_thread.cc
+  ${PROJECT_SOURCE_DIR}/main_window.cc
 )
 
 ### All the code globbed together for easy formatting ###
@@ -50,9 +51,6 @@ file(GLOB_RECURSE FORMAT_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/test/src/*.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/test/src/*.h
   ${CMAKE_CURRENT_SOURCE_DIR}/test/src/*.inl
-  ${CMAKE_CURRENT_SOURCE_DIR}/aa-caller/src/*.cc
-  ${CMAKE_CURRENT_SOURCE_DIR}/aa-caller/src/*.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/aa-caller/src/*.inl
 )
 
 set(PROJECT_RESOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/resources)
@@ -61,10 +59,6 @@ set(GENERATED_DIR ${PROJECT_RESOURCE_DIR}/generated)
 
 set(XML_GRESOURCE ${PROJECT_UI_DIR}/resources.gresource.xml)
 set(RESOURCE_BUNDLE_OUTPUT ${GENERATED_DIR}/resource.autogen.c)
-
-set(PKEXEC_POLICY_IN ${PROJECT_RESOURCE_DIR}/pkexec.policy.in)
-set(PKEXEC_POLICY ${GENERATED_DIR}/com.github.jack-ullery.AppAnvil.pkexec.policy)
-configure_file("${PKEXEC_POLICY_IN}" "${PKEXEC_POLICY}" @ONLY) 
 
 set(LICENSE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/docs/copyright")
 set(ICON_FILE "${PROJECT_UI_DIR}/misc/icon.svg")
@@ -211,13 +205,18 @@ pkg_check_modules(GTEST gtest)
 pkg_check_modules(GMOCK gmock)
 
 enable_testing()
-add_subdirectory(aa-caller)
 add_subdirectory(test)
 
 #### Create install target to install binaries  ####
 install(
   TARGETS ${PROJECT_NAME}
   DESTINATION bin
+)
+
+#### Install aa-caller script ####
+install(
+  PROGRAMS "${CMAKE_CURRENT_SOURCE_DIR}/aa-caller/aa-caller"
+  DESTINATION sbin
 )
 
 #### Install desktop entry file ####
@@ -245,12 +244,6 @@ set(CPACK_DEBIAN_PACKAGE_DEPENDS "libgtkmm-3.0-dev,libjsoncpp-dev,libapparmor-de
 set(CPACK_PACKAGE_CONTACT "Jack Ullery")
 set(CPACK_INSTALL_SCRIPT "cmake_install.cmake")
 include(CPack)
-
-#### Set install target to also modify pkexec ####
-install(
-  FILES ${PKEXEC_POLICY}
-  DESTINATION /usr/share/polkit-1/actions/
-)
 
 #### Set install target to make snap profiles modifiable ####
 # This creates symbolic links in `/var/lib/snapd/apparmor/profiles`, to make it easier to modify these profiles

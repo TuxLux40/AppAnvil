@@ -1,37 +1,27 @@
 #ifndef SRC_CONSOLE_THREAD_H
 #define SRC_CONSOLE_THREAD_H
 
-#include "tabs/model/status_column_record.h"
+#include "threads/async_process.h"
 #include "threads/blocking_queue.h"
 #include "threads/dispatcher_middleman.h"
-#include "threads/log_reader.h"
 
 #include <chrono>
 #include <condition_variable>
+#include <functional>
 #include <future>
 #include <glibmm/dispatcher.h>
 #include <memory>
 #include <mutex>
-#include <thread>
 #include <vector>
-
-enum TabState
-{
-  PROFILE,
-  PROCESS,
-  LOGS,
-  OTHER
-};
 
 /**
  * This class creates a separate thread that the main GUI thread can communicate with.
  * This second thread asynchronously calls terminal commands and communicates the results with the main thread.
  **/
-template<class ProfilesController, class ProcessesController, class LogsController>
 class ConsoleThread
 {
 public:
-  ConsoleThread(std::shared_ptr<ProfilesController> prof, std::shared_ptr<ProcessesController> proc, std::shared_ptr<LogsController> logs);
+  ConsoleThread(dispatch_cb_fun prof_cb, dispatch_cb_fun proc_cb, log_cb_fun logs_cb, std::function<void(bool)> show_reauth);
   ~ConsoleThread();
 
   // Delete the copy-constructor, move constructor, and copy assignment operator
@@ -42,17 +32,10 @@ public:
   // Create a move assignment operator
   ConsoleThread &operator=(ConsoleThread &&other) noexcept;
 
-  /**
-   * @brief Allows sending calls to pkexec if this was disabled previously.
-   *
-   * @details
-   * This is tells ConsoleThread that we want to continue calling `pkexec aa-caller`.
-   * Those pkexec calls may be disabled by ConsoleThread, if the user decides not to authenticate.
-   * We do this, because we want to avoid spamming the user with pkexec prompts
-   */
-  void reenable_authentication_for_refresh();
+  // Helper function to init `aa_caller_proc`
+  void start_aa_caller();
 
-  void send_refresh_message(TabState new_state);
+  void send_refresh_message();
   void send_change_profile_status_message(const std::string &profile, const std::string &old_status, const std::string &new_status);
   void send_quit_message();
 
@@ -67,13 +50,11 @@ protected:
   struct Message
   {
     Event event;
-    TabState state;
     std::vector<std::string> data;
 
-    Message(Event a, TabState b, std::vector<std::string> c)
+    Message(Event a, std::vector<std::string> b)
       : event{ a },
-        state{ b },
-        data{ std::move(c) }
+        data{ std::move(b) }
     {
     }
   };
@@ -81,23 +62,19 @@ protected:
   void console_caller();
 
 private:
-  static constexpr unsigned int TIME_WAIT = 5;
+  static constexpr std::chrono::seconds TIME_WAIT = std::chrono::seconds(5);
   static std::chrono::time_point<std::chrono::steady_clock> get_wait_time_point();
 
   Message wait_for_message();
-  void run_command(TabState state);
+  void handle_refresh();
 
   // Member fields
-  BlockingQueue<Message, std::deque<Message>, std::mutex> queue;
-  TabState last_state{ PROFILE };
-  std::string log_cursor;
-  bool should_try_refresh = true;
+  BlockingQueue<Message> queue;
 
-  // Used to read logs from files, assumes this process has read permission to the logs
-  LogReader log_reader;
+  std::unique_ptr<AsyncProcess> aa_caller_proc;
 
   // DispatcherMiddleman used to communicate results with main thread
-  DispatcherMiddleman<ProfilesController, ProcessesController, LogsController, Glib::Dispatcher, std::mutex> dispatch_man;
+  DispatcherMiddleman<> dispatch_man;
 
   // Representation of the extra thread
   std::future<void> asynchronous_thread;
