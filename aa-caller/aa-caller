@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import asyncio
 import argparse
 import json
 import subprocess
@@ -24,10 +25,11 @@ def get_ps():
     cmd = ["ps", "-A", "--format", "pid,ppid,user,context,comm", "--no-header"]
     return run_command(cmd)
 
-# Calls journalctl 
+# Calls journalctl
+# TODO: This is gross and we should fix it by not callinf --show-cursor
+#  We should instead call --follow on the first invocation and write everything to a pipe
 def get_journalctl(cursor = None):
-    cmd = ["journalctl", "-r", "_AUDIT_TYPE=1400", "--output=json", "--show-cursor"]
-
+    cmd = ["journalctl", "-r", "-g", "apparmor=", "--output=json", "--show-cursor"]
     if cursor != None:
         cmd += ["--after-cursor", cursor]
 
@@ -35,9 +37,10 @@ def get_journalctl(cursor = None):
     if data == None or len(data) == 0:
         return None, None
 
-    cursor_index = data.rfind('l')
+    CURSOR_STR='-- cursor: '
+    cursor_index = data.rfind(CURSOR_STR)
     raw_data = data[:cursor_index]
-    cursor = data[cursor_index:]
+    cursor = data[cursor_index + len(CURSOR_STR):]
     return raw_data, cursor
 
 def get_ausearch():
