@@ -4,9 +4,10 @@
 
 #include "async_process.h"
 
-AsyncProcess::AsyncProcess(const int pid, const int stdin_fd)
+AsyncProcess::AsyncProcess(const int pid, const int stdin_fd, const int stderr_fd)
   : pid{ pid },
-    stdin_fd{ stdin_fd }
+    stdin_fd{ stdin_fd },
+    stderr_fd{ stderr_fd }
 {
   assert(valid());
 
@@ -17,12 +18,16 @@ AsyncProcess::AsyncProcess(const int pid, const int stdin_fd)
 
 AsyncProcess::~AsyncProcess()
 {
-  if (pid > 0) {
-    Glib::spawn_close_pid(pid);
-  }
-
   if (stdin_fd > 0) {
     close(stdin_fd);
+  }
+
+  if (stderr_fd > 0) {
+    close(stderr_fd);
+  }
+
+  if (pid > 0) {
+    Glib::spawn_close_pid(pid);
   }
 }
 

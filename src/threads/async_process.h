@@ -7,7 +7,7 @@
 class AsyncProcess
 {
 public:
-  AsyncProcess(const int pid, const int stdin_fd);
+  AsyncProcess(const int pid, const int stdin_fd, const int stderr_fd);
   AsyncProcess() = default;
 
   ~AsyncProcess();
@@ -37,8 +37,9 @@ public:
   AsyncProcess &operator=(AsyncProcess &&)      = delete;
 
 private:
-  const int pid      = 0;
-  const int stdin_fd = 0;
+  const int pid       = 0;
+  const int stdin_fd  = 0;
+  const int stderr_fd = 0;
 };
 
 #endif

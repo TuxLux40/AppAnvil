@@ -41,11 +41,13 @@ AsyncProcess CommandCaller::call_command_async(const std::vector<std::string> &c
 {
   Glib::Pid child_pid;
   Glib::Pid stdout_fd;
+  Glib::Pid stderr_fd;
   std::vector<std::string> envp = { "PATH=/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin" };
 
-  Glib::spawn_async_with_pipes("/usr/sbin/", command, envp, Glib::SpawnFlags::SPAWN_SEARCH_PATH_FROM_ENVP, {}, &child_pid, nullptr, &stdout_fd);
+  Glib::spawn_async_with_pipes(
+    "/usr/sbin/", command, envp, Glib::SpawnFlags::SPAWN_SEARCH_PATH_FROM_ENVP, {}, &child_pid, nullptr, &stdout_fd, &stderr_fd);
 
-  return AsyncProcess(child_pid, stdout_fd);
+  return AsyncProcess(child_pid, stdout_fd, stderr_fd);
 }
 
 inline bool contains(const std::string &big_str, const std::string &small_str)
