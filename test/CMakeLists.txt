@@ -18,11 +18,6 @@ set(
   ${CMAKE_CURRENT_SOURCE_DIR}/src/threads/blocking_queue.cc
 )
 
-set(
-  AA_CALLER_TEST_SOURCES
-  ${CMAKE_CURRENT_SOURCE_DIR}/aa-caller/aa-caller.cc
-)
-
 set(REPORT_FILES_DIR ${CMAKE_BINARY_DIR}/${PROJECT_NAME}/CMakeFiles/${PROJECT_NAME}.dir)
 set(EXAMPLE_PROFILE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/example_profiles)
 
@@ -64,7 +59,6 @@ if(${GTEST_FOUND} AND ${GMOCK_FOUND})
       ${RESOURCE_BUNDLE_OUTPUT}
       ${SOURCES}
       ${APPANVIL_TEST_SOURCES}
-      ${AA_CALLER_TEST_SOURCES}
   )
 
   # Do not use clang-tidy on test code
@@ -103,7 +97,6 @@ if(${GTEST_FOUND} AND ${GMOCK_FOUND})
   target_link_libraries(${PROJECT_NAME} PUBLIC ${JSONCPP_LIBRARIES})
   target_link_libraries(${PROJECT_NAME} PUBLIC ${GTKMM_LIBRARIES})
   target_link_libraries(${PROJECT_NAME} PUBLIC ${LIBAPPARMOR_LIBRARIES})
-  target_link_libraries(${PROJECT_NAME} PUBLIC "aa-caller_dev")
   target_link_libraries(${PROJECT_NAME} PUBLIC appanvil-dev)
 
   #### Add tests to ctest ####
@@ -115,13 +108,6 @@ if(${GTEST_FOUND} AND ${GMOCK_FOUND})
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src"
     TEST_PREFIX "[appanvil]"
     TEST_LIST ADDED_TESTS_1
-  )
-
-  gtest_discover_tests(
-    ${PROJECT_NAME}
-    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/aa-caller"
-    TEST_PREFIX "[aa-caller] "
-    TEST_LIST ADDED_TESTS_2
   )
 
   # #### Create fixture for tests ####

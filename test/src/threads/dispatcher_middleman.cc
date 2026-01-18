@@ -1,10 +1,5 @@
 #include "dispatcher_middleman.h"
-#include "../tabs/controller/logs_controller_mock.h"
-#include "../tabs/controller/processes_controller_mock.h"
-#include "../tabs/controller/profiles_controller_mock.h"
-#include "mutex_mock.h"
 
-#include <future>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -42,7 +37,7 @@ TEST_F(DispatcherMiddlemanTest, UPDATE_PROFILES)
   expect_locks(2 * num_calls);
   expect_show_reauthenticate_prompt(should_show, num_calls);
 
-  dispatch_man.update_profiles(profiles_arg, should_show);
+  dispatch_man.update_profiles(profiles_arg_json);
   dispatch_man.handle_signal();
 }
 
@@ -58,8 +53,7 @@ TEST_F(DispatcherMiddlemanTest, UPDATE_PROCESSES)
   expect_locks(2 * num_calls);
   expect_show_reauthenticate_prompt(should_show, num_calls);
 
-  dispatch_man.update_processes(processes_arg, should_show);
-  ;
+  dispatch_man.update_processes(processes_arg_json);
   dispatch_man.handle_signal();
 }
 
@@ -75,8 +69,7 @@ TEST_F(DispatcherMiddlemanTest, UPDATE_LOGS)
   expect_locks(2 * num_calls);
   expect_show_reauthenticate_prompt(should_show, num_calls);
 
-  dispatch_man.update_logs(logs_arg, should_show);
-  ;
+  dispatch_man.update_logs(logs_arg);
   dispatch_man.handle_signal();
 }
 
@@ -93,11 +86,9 @@ TEST_F(DispatcherMiddlemanTest, UPDATE_PROFILES_PROCESSES_SEQUENTIAL)
   expect_locks(2 * num_calls);
   expect_show_reauthenticate_prompt(should_show, num_calls);
 
-  dispatch_man.update_profiles(profiles_arg, should_show);
-  ;
+  dispatch_man.update_profiles(profiles_arg_json);
   dispatch_man.handle_signal();
-  dispatch_man.update_processes(processes_arg, should_show);
-  ;
+  dispatch_man.update_processes(processes_arg_json);
   dispatch_man.handle_signal();
 }
 
@@ -114,10 +105,8 @@ TEST_F(DispatcherMiddlemanTest, UPDATE_PROFILES_PROCESSES_INTERLOCKING)
   expect_locks(2 * num_calls);
   expect_show_reauthenticate_prompt(should_show, num_calls);
 
-  dispatch_man.update_profiles(profiles_arg, should_show);
-  ;
-  dispatch_man.update_processes(processes_arg, should_show);
-  ;
+  dispatch_man.update_profiles(profiles_arg_json);
+  dispatch_man.update_processes(processes_arg_json);
   dispatch_man.handle_signal();
   dispatch_man.handle_signal();
 }
