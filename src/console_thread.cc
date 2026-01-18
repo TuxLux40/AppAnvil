@@ -1,5 +1,6 @@
 #include "console_thread.h"
 #include "threads/command_caller.h"
+#include "threads/log_reader.h"
 
 #include <iostream>
 #include <json/reader.h>
@@ -7,7 +8,7 @@
 #include <json/writer.h>
 #include <string>
 
-ConsoleThread::ConsoleThread(dispatch_cb_fun prof, dispatch_cb_fun proc, dispatch_cb_fun logs, std::function<void(bool)> show_reauth)
+ConsoleThread::ConsoleThread(dispatch_cb_fun prof, dispatch_cb_fun proc, log_cb_fun logs, std::function<void(bool)> show_reauth)
   : aa_caller_proc{ CommandCaller::call_aa_caller() },
     dispatch_man(prof, proc, logs, show_reauth),
     asynchronous_thread(std::async(std::launch::async, &ConsoleThread::console_caller, this))
@@ -80,7 +81,8 @@ void ConsoleThread::handle_refresh()
       } else if (key == "ps") {
         dispatch_man.update_processes(value);
       } else if (key == "journalctl") {
-        dispatch_man.update_logs(value);
+        auto logs = LogReader::parse_journalctl_logs(value.asString());
+        dispatch_man.update_logs(logs);
       } else {
         std::cerr << "Unkown key from aa-caller: " << key << std::endl;
       }

@@ -7,7 +7,7 @@
 template<class Dispatcher, class Mutex>
 DispatcherMiddleman<Dispatcher, Mutex>::DispatcherMiddleman(dispatch_cb_fun prof_arg,
                                                             dispatch_cb_fun proc_arg,
-                                                            dispatch_cb_fun logs_arg,
+                                                            log_cb_fun logs_arg,
                                                             std::function<void(bool)> show_reauth)
   : dispatch{ std::make_shared<Dispatcher>() },
     prof{ std::move(prof_arg) },
@@ -23,7 +23,7 @@ template<class Dispatcher, class Mutex>
 DispatcherMiddleman<Dispatcher, Mutex>::DispatcherMiddleman(std::shared_ptr<Dispatcher> disp,
                                                             dispatch_cb_fun prof_arg,
                                                             dispatch_cb_fun proc_arg,
-                                                            dispatch_cb_fun logs_arg,
+                                                            log_cb_fun logs_arg,
                                                             std::shared_ptr<Mutex> my_mtx)
   : queue(std::make_shared<std::deque<CallData>>(), my_mtx),
     dispatch{ std::move(disp) },
@@ -51,9 +51,9 @@ void DispatcherMiddleman<Dispatcher, Mutex>::update_processes(Json::Value &value
 }
 
 template<class Dispatcher, class Mutex>
-void DispatcherMiddleman<Dispatcher, Mutex>::update_logs(Json::Value &value)
+void DispatcherMiddleman<Dispatcher, Mutex>::update_logs(const std::list<std::shared_ptr<LogRecord>> &logs)
 {
-  CallData data(LOGS, value);
+  CallData data(logs);
   queue.push(data);
   dispatch->emit();
 }
@@ -90,7 +90,7 @@ void DispatcherMiddleman<Dispatcher, Mutex>::handle_signal()
       break;
 
     case LOGS:
-      logs(data.data);
+      logs(data.logs);
       break;
 
     case PROFILES_TEXT:

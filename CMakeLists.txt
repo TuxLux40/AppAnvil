@@ -13,7 +13,7 @@ set(
   ${PROJECT_SOURCE_DIR}/threads/command_caller.cc
   ${PROJECT_SOURCE_DIR}/threads/dispatcher_middleman.cc
   ${PROJECT_SOURCE_DIR}/threads/log_record.cc
- # ${PROJECT_SOURCE_DIR}/threads/log_reader.cc
+  ${PROJECT_SOURCE_DIR}/threads/log_reader.cc
   ${PROJECT_SOURCE_DIR}/tabs/model/database.cc
   ${PROJECT_SOURCE_DIR}/tabs/model/combobox_store.cc
   ${PROJECT_SOURCE_DIR}/tabs/model/status_column_record.cc

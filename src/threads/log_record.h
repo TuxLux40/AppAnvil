@@ -1,8 +1,8 @@
 #ifndef SRC_THREADS_LOG_RECORD_H
 #define SRC_THREADS_LOG_RECORD_H
 
-#include <forward_list>
 #include <list>
+#include <locale>
 #include <string>
 
 // We want to use aalogparse.h from the libapparmor-dev library (which was written in C)
@@ -24,6 +24,7 @@ class LogRecord
 public:
   // Initializes this class based on the data from a single log
   explicit LogRecord(const std::string &log);
+  LogRecord(const time_t &timestamp, const std::string &log, const std::locale &loc = std::locale(""));
 
   // Custom destructor. Calls free_record() on record_data
   ~LogRecord();

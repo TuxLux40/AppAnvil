@@ -24,7 +24,6 @@ public:
   bool on_button_event(GdkEventButton *event);
 
   virtual void add_data_to_record(const std::list<std::shared_ptr<LogRecord>> &data);
-  virtual void add_data_to_record_2(const std::string &log_data);
 
   unsigned int num_visible_rows();
   void refresh();
@@ -35,8 +34,6 @@ protected:
 
   bool add_data_to_record_helper(std::shared_ptr<std::list<std::shared_ptr<LogRecord>>> data);
   void add_row(const std::shared_ptr<LogRecord> &record);
-
-  void add_entry_to_record(const std::string &json_data);
 
 private:
   std::shared_ptr<LogsTab> logs;

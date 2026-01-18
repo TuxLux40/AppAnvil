@@ -20,7 +20,7 @@
 class ConsoleThread
 {
 public:
-  ConsoleThread(dispatch_cb_fun prof_cb, dispatch_cb_fun proc_cb, dispatch_cb_fun logs_cb, std::function<void(bool)> show_reauth);
+  ConsoleThread(dispatch_cb_fun prof_cb, dispatch_cb_fun proc_cb, log_cb_fun logs_cb, std::function<void(bool)> show_reauth);
   ~ConsoleThread();
 
   // Delete the copy-constructor, move constructor, and copy assignment operator

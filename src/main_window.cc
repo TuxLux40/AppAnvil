@@ -16,7 +16,7 @@ MainWindow::MainWindow()
   // Initialize the ConsoleThread Object
   auto pf_cb = std::bind(&ProfilesControllerInstance::add_data_to_record, prof_control, _1);
   auto pc_cb = std::bind(&ProcessesControllerInstance::add_data_to_record, proc_control, _1);
-  auto lo_cb = std::bind(&LogsControllerInstance::add_data_to_record_2, logs_control, _1);
+  auto lo_cb = std::bind(&LogsControllerInstance::add_data_to_record, logs_control, _1);
   auto mw_cb = std::bind(&MainWindow::show_reauth, this, _1);
   console    = std::make_shared<ConsoleThread>(pf_cb, pc_cb, lo_cb, mw_cb);
 

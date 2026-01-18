@@ -2,6 +2,7 @@
 #define SRC_THREADS_DISPATCHER_MIDDLEMAN_H
 
 #include "blocking_queue.h"
+#include "log_record.h"
 
 #include <glibmm/dispatcher.h>
 #include <json/value.h>
@@ -13,6 +14,7 @@
 #endif
 
 typedef std::function<void(std::string &)> dispatch_cb_fun;
+typedef std::function<void(std::list<std::shared_ptr<LogRecord>> &)> log_cb_fun;
 
 /**
  * Class to extend some of the functionality of `Dispatcher` to easier facilitate inter-thread
@@ -24,18 +26,19 @@ class DispatcherMiddleman
 {
 public:
   // Constructor
-  DispatcherMiddleman(dispatch_cb_fun prof, dispatch_cb_fun proc, dispatch_cb_fun logs, std::function<void(bool)> show_reauth);
+  DispatcherMiddleman(dispatch_cb_fun prof, dispatch_cb_fun proc, log_cb_fun logs, std::function<void(bool)> show_reauth);
+
   // For unit testing
   explicit DispatcherMiddleman(std::shared_ptr<Dispatcher> disp,
                                dispatch_cb_fun prof,
                                dispatch_cb_fun proc,
-                               dispatch_cb_fun logs,
+                               log_cb_fun logs,
                                std::shared_ptr<Mutex> my_mtx);
 
   // Send methods (called from second thread)
   void update_profiles(Json::Value &value);
   void update_processes(Json::Value &value);
-  void update_logs(Json::Value &value);
+  void update_logs(const std::list<std::shared_ptr<LogRecord>> &logs);
   void update_reauth(const bool &reauth);
   void update_prof_apply_text(const std::string &text);
 
@@ -54,11 +57,18 @@ protected:
   {
     CallType type;
     std::string data;
+    std::list<std::shared_ptr<LogRecord>> logs;
     bool should_reauth;
 
     CallData(CallType type, Json::Value data)
       : type{ type },
         data{ data.asString() }
+    {
+    }
+
+    CallData(std::list<std::shared_ptr<LogRecord>> logs)
+      : type{ LOGS },
+        logs{ logs }
     {
     }
 
@@ -78,7 +88,7 @@ private:
 
   dispatch_cb_fun prof;
   dispatch_cb_fun proc;
-  dispatch_cb_fun logs;
+  log_cb_fun logs;
   std::function<void(bool)> show_reauth;
 
 #ifdef TESTS_ENABLED

@@ -4,10 +4,8 @@
 #include "../model/status_column_record.h"
 #include "../view/logs.h"
 
-#include <exception>
 #include <glibmm/main.h>
 #include <glibmm/priorities.h>
-#include <iostream>
 #include <list>
 #include <memory>
 #include <regex>
@@ -97,75 +95,6 @@ void LogsController<LogsTab, Database, Adapter, LogRecord>::add_data_to_record(c
   auto ptr    = std::make_shared<std::list<std::shared_ptr<LogRecord>>>(data);
   auto lambda = [&, ptr]() -> bool { return add_data_to_record_helper(ptr); };
   Glib::signal_idle().connect(lambda, Glib::PRIORITY_LOW);
-}
-
-template<class LogsTab, class Database, class Adapter, class LogRecord>
-void LogsController<LogsTab, Database, Adapter, LogRecord>::add_data_to_record_2(const std::string &log_data)
-{
-  std::stringstream ss(log_data);
-  std::string line;
-  while (std::getline(ss, line, '\n')) {
-    try {
-      this->add_entry_to_record(line);
-    } catch (std::exception &ex) {
-      std::cerr << ex.what() << std::endl;
-    }
-  }
-}
-
-// TODO(parsing): Need to check if I can parse these with libapparmor!
-template<class LogsTab, class Database, class Adapter, class LogRecord>
-void LogsController<LogsTab, Database, Adapter, LogRecord>::add_entry_to_record(const std::string &json_data)
-{
-  // Parse the message into string
-  Json::Value root = this->parse_JSON(json_data);
-  auto message     = root["MESSAGE"].asString();
-
-  // Use regex to get each individual tag from the message
-  const std::regex tag_regex("(\\S+)=(\\S+)");
-
-  std::string profile_name;
-  time_t timestamp = std::stol(root["__REALTIME_TIMESTAMP"].asString()) / (1000000);
-  std::string event_type;
-  ulong pid;
-  std::string operation;
-  std::list<std::pair<std::string, std::string>> metadata;
-
-  std::smatch match;
-  std::string::const_iterator start = message.cbegin();
-  while (std::regex_search(start, message.cend(), match, tag_regex)) {
-    std::string tag_name  = match[1];
-    std::string tag_value = match[2];
-
-    if(tag_value[0] == '"' && tag_value[tag_value.length() -1] == '"')
-    {
-      tag_value = tag_value.substr(1, tag_value.length() - 2);
-    }
-    else if(tag_name == "apparmor")
-    {
-      event_type = tag_value;
-    }
-    else if (tag_name == "name")
-    {
-      profile_name = tag_value;
-    }
-    else if (tag_name == "operation")
-    {
-      operation = tag_value;
-    }
-    else if (tag_name == "pid")
-    {
-      pid = std::stoi(tag_value);
-    }
-    else {
-      metadata.push_back({tag_name, tag_value});
-    }
-
-    // Update iter
-    start = match.suffix().first;
-  }
-
-  adapter->put_data(timestamp, event_type, operation, profile_name, pid, metadata);
 }
 
 template<class LogsTab, class Database, class Adapter, class LogRecord>
