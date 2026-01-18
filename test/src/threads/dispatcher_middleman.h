@@ -47,7 +47,7 @@ protected:
   std::string processes_arg = "string argument for 'processes.add_data()'";
   std::list<std::shared_ptr<LogRecord>> logs_arg;
 
-  Json::Value profiles_arg_json = Json::String(profiles_arg);
+  Json::Value profiles_arg_json  = Json::String(profiles_arg);
   Json::Value processes_arg_json = Json::String(processes_arg);
 
   std::shared_ptr<GlibDispatcherMock> disp;

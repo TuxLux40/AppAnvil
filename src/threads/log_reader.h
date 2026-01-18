@@ -17,9 +17,9 @@ public:
 
   /**
    * @brief Parses journalctl logs into a list of LogRecords
-   * 
-   * @param log_data 
-   * @return std::list<std::shared_ptr<LogRecord>> 
+   *
+   * @param log_data
+   * @return std::list<std::shared_ptr<LogRecord>>
    */
   static std::list<std::shared_ptr<LogRecord>> parse_journalctl_logs(const std::string &log_data);
 
