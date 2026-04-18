@@ -214,9 +214,18 @@ install(
 )
 
 #### Install aa-caller script ####
+# On merged-usr systems (Arch, Fedora, modern Debian) /usr/sbin is a symlink to
+# /usr/bin. Installing to "sbin" then creates a physical sbin directory inside
+# pkgdir, which pacman rejects as a file-conflict with the system symlink.
+# Detect the symlink and install to "bin" in that case.
+if(IS_SYMLINK "/usr/sbin")
+  set(AACALLER_INSTALL_DIR "bin")
+else()
+  set(AACALLER_INSTALL_DIR "sbin")
+endif()
 install(
   PROGRAMS "${CMAKE_CURRENT_SOURCE_DIR}/aa-caller/aa-caller"
-  DESTINATION sbin
+  DESTINATION ${AACALLER_INSTALL_DIR}
 )
 
 #### Install desktop entry file ####
